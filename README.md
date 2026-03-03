@@ -1,111 +1,128 @@
-# FPGA Laboratory Works (Labs 1-10)
+# Лабораторная работа 3
 
-**Course:** FPGA Design with Vivado  
-**Platform:** Xilinx Artix-7 A15T (xc7a15tftg256-2)  
-**Tools:** Vivado 2023.2, SystemVerilog
-
----
-
-## 📚 Laboratory Works
-
-| Lab | Title | Description | Status |
-|-----|-------|-------------|--------|
-| **1** | **Door Alarm System** | Combinational OR logic gate for alarm trigger | ✅ Complete |
-| 2 | Counter | [TBD] | - |
-| 3 | Traffic Light Controller | [TBD] | - |
-| 4 | Multiplexer | [TBD] | - |
-| 5 | UART Interface | [TBD] | - |
-| 6 | State Machine | [TBD] | - |
-| 7 | Memory Controller | [TBD] | - |
-| 8 | PWM Generator | [TBD] | - |
-| 9 | Digital Filter | [TBD] | - |
-| 10 | Complete System | [TBD] | - |
+## Цель работы
+Цель этой работы — получение навыка структурного описания схем на языке **SystemVerilog**, исследование влияния структуры на быстродействие.
+Анализ быстродействия полученной схемы, выделение критического пути.
+Дополнительно можно иллюстрировать различие структурного и поведенческого описания.
 
 ---
 
-## 🎯 Quick Start
+## Задание
 
-### Lab 1: Door Alarm System
+Необходимо спроектировать и описать на SystemVerilog 32-битный компаратор целых беззнаковых чисел.
 
-**Navigate to lab:**
-```powershell
-cd lab01-door-alarm
-```
+### Предметная постановка
+Модуль должен принимать два входа:
+`input  logic [31:0] a   
+ input  logic [31:0] b` 
+и формировать три выхода: `output logic gt   output logic eq   output logic lt`
+когда a больше b, a равно b и a меньше b соответственно.
+Выходы должны быть взаимоисключающими, в каждый момент времени активен ровно один выходной сигнал.
 
-**Project structure:**
-```
-lab01-door-alarm/
-├── src/my_module.sv         # Top module: car (door1, door2 -> lamp)
-├── tb/my_module_tb.sv       # Testbench with 4 test cases
-├── constraints/
-│   ├── car.xdc              # Pin assignments (door1: btn[0], door2: btn[1], lamp: yled)
-│   └── board.xdc            # Board definitions
-├── scripts/
-│   ├── create_vivado_project.tcl
-│   ├── synth_vivado.tcl
-│   ├── flow_complete.tcl
-│   └── program_fpga.tcl
-└── README.md                # Lab 1 documentation
-```
-
-**Build and program:**
-```powershell
-cd lab01-door-alarm/scripts
-
-# Synthesis & Implementation
-& "C:\Xilinx\Vivado\2023.2\bin\vivado.bat" -mode batch -source flow_complete.tcl
-
-# Program FPGA (requires Digilent cable)
-& "C:\Xilinx\Vivado\2023.2\bin\vivado.bat" -mode batch -source program_fpga.tcl
-```
-
+**Требование:**  
+Способ проектирования - только описание структуры. Используется только assign, если требуются дополнительные проводники, они описываются типом logic.
+Запрещено использовать операторы ==  !=  <  >  <=  >= для сравнения целых векторов.
+Запрещено использовать:
+always
+always_comb
+if
+case
+Можно (и нужно) использовать:
+оператор assign;
+побитовые операции (&, |, ^, ~);
+редукционные операции (|vector);
+конструкцию generate.
 ---
 
-## 📖 Each Lab Includes
-
-- **src/** — SystemVerilog source code
-- **tb/** — Testbenches for simulation
-- **constraints/** — XDC pin assignments & timing
-- **scripts/** — TCL automation for Vivado
-- **README.md** — Lab-specific documentation
-
+## Идея схемы
+Сравнение чисел разумно проводить, начиная со старшего бита (MSB).
+Как только найден первый различающийся бит, можно принять решение:
+если a[i]=0, b[i]=1 → a < b;
+если a[i]=1, b[i]=0 → a > b.
+Если различий нет — числа равны.
 ---
 
-## 📊 Resource Usage (Lab 1)
+## Порядок выполнения
 
-| Resource | Used | Total | Util% |
-|----------|------|-------|-------|
-| Slice LUTs | 1 | 10400 | <0.01% |
-| Registers | 0 | 20800 | 0.00% |
-| Bonded IOB | 3 | 170 | 1.76% |
+1. Вам предоставлен готовый файл проекта:
+   ```
+   vivado/comp.xpr
+   ```
+   и шаблон кода
+   ```
+   comp.sv
+   ```
+   В нем уже приведено описание интерфейса модуля — список входных и выходных сигналов.
 
+2. После описания интерфейса добавьте **описание структуры схемы**.
+   Учитывайте ограничения, указанные выше.
+---
+## Проверка схемы
+После описания логики:
+1. Перейдите в **RTL Analysis → Schematic**.
+2. Посмотрите, какая логическая схема была синтезирована.
+3. Ответьте для себя:
+   - какие логические элементы используются?
+   - соответствует ли схема ожидаемой логике?
+---
+## Быстрая проверка решения
+
+Для проверки корректности работы используется симуляция.
+
+- Тестбенч `tb_comp.sv` **уже подготовлен**.
+- Найдите его в окне **Sources** и откройте.
+- **Пока изменять тестбенч не нужно.**
+
+Рекомендуемый порядок:
+1. Внимательно прочитайте код тестбенча.
+2. Для лучшего понимания можно скопировать его в ChatGPT и попросить:
+   - объяснить, что делает этот код;
+   - как он работает;
+   - зачем нужен каждый его фрагмент.
+3. Если что-то непонятно — задайте дополнительные вопросы.
+4. В панели **Flow Navigator** выберите **Behavioral Simulation**.
+5. После завершения симуляции:
+   - откройте вывод в **Tcl Console**;
+   - проанализируйте результаты.
+
+Корректно ли работает схема?
 ---
 
-## ⏱️ Build Times (Lab 1)
-
-- Synthesis: 00:01:28
-- Implementation: 00:05:24
-- Bitstream generation: ~00:00:25
-- **Total: ~00:07:17**
-
+## Синтез схемы и исследование ее свойств
+1. Перейдите в **Synthesis → Run Synthesis**.
+2. Если синтез завершился неуспешно, исправьте ошибки и повторите синтез.
+3. Отметьте, сколько логических ячеек использовано (**Synthesis → Report Utilization** или закладка **Design Runs** ).
+3. В панели **Flow Navigator** выберите **Simulation → Post-Synthesis Timing Simulation**.
+   Теперь симуляция будет выполнена с учетом задержек в каждом использованном логическом элементе. 
+   Директива `timescale в начале файла задает точность симуляции: величину "единицы времени" и через слэш - дискретность вычислений, 
+   в нашем случае "единица отсчета" -0 наносекунда, точность измерения - пикосекунда.
+4. После завершения симуляции:
+   - откройте вывод в **Tcl Console**;
+   - проанализируйте результаты.
 ---
 
-## 🔗 References
-
-- [Xilinx Vivado Documentation](https://www.xilinx.com/documentation.html)
-- [Artix-7 Datasheet](https://www.xilinx.com/support/documentation/data_sheets/ds181_Artix_7_Data_Sheet.pdf)
-- [SystemVerilog LRM](https://ieeexplore.ieee.org/servlet/opac?punumber=6691051)
-
+## Вывод временных диаграмм
+1. Откройте окно с файлом .wcfg, где результаты симуляции представлены в виде временной диаграммы.
+2. Научитесь пользоваться кнопками изменения масштаба, поиска моментов изменения определенного сигнала.
+3. Измерьте время от подачи новых данных на вход компаратора до появления на выходе верного результата.
 ---
 
-## 📝 Notes
+## Что сдается
 
-- All labs use Artix-7 A15T FPGA
-- LVCMOS33 IO standard (3.3V)
-- Vivado 2023.2 for synthesis
-- Digilent JTAG for programming
-
+Что сдаётся: репозиторий GitHub Classroom
 ---
 
-**Created:** Feb 8, 2026  
-**Last Updated:** Feb 8, 2026
+## Дополнительное задание
+
+### 1. Разрядность компаратора и его быстродействие
+1. Измените разрядность входных чисел до 128. 
+Чтобы код выглядел профессионально, используйте директиву parameter N = 128.
+2. Измените разумным образом тестовые данные. Как изменится время работы компаратора?
+Подберите тестовые данные так, чтобы время работы было максимально возможным.
+---
+
+### 2. Синтезатор Vivado против сделанного руками цепочечного компаратора
+Закомментируйте написанный вами код модуля comp. Замените его на assign gt = (a >  b) и так далее.
+Теперь Vivado самостоятельно создаст компаратор. Тестбенч, естественно, менять не нужно - интерфейс модуля не изменился.
+Повторите синтез и Post-Synthesis Timing Simulation.
+Сравните количество использованных ячеек и быстродействие схемы.
